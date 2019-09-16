@@ -1,11 +1,11 @@
 {
-    "name": "tamayo/laravel-scout-elastic",
+    "name": "cyclobster/laravel-scout-elastic",
     "description": "Elastic Driver for Laravel Scout",
     "keywords": ["laravel", "scout", "elasticsearch", "elastic"],
     "require": {
-        "php": ">=5.6.4",
-        "laravel/scout": "^5.0|^6.0|^7.0",
-        "elasticsearch/elasticsearch": "^5.0"
+        "php": ">=7.2.20",
+        "laravel/scout": "^7.0",
+        "elasticsearch/elasticsearch": "^6.0"
     },
      "require-dev": {
         "fzaninotto/faker": "~1.4",

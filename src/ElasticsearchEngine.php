@@ -15,7 +15,7 @@ class ElasticsearchEngine extends Engine
      * @var string
      */
     protected $index;
-    
+
     /**
      * Elastic where the instance of Elastic|\Elasticsearch\Client is stored.
      *
@@ -29,10 +29,9 @@ class ElasticsearchEngine extends Engine
      * @param  \Elasticsearch\Client  $elastic
      * @return void
      */
-    public function __construct(Elastic $elastic, $index)
+    public function __construct(Elastic $elastic)
     {
         $this->elastic = $elastic;
-        $this->index = $index;
     }
 
     /**
@@ -50,8 +49,7 @@ class ElasticsearchEngine extends Engine
             $params['body'][] = [
                 'update' => [
                     '_id' => $model->getKey(),
-                    '_index' => $this->index,
-                    '_type' => $model->searchableAs(),
+                    '_index' => $model->searchableAs(),
                 ]
             ];
             $params['body'][] = [
@@ -78,8 +76,7 @@ class ElasticsearchEngine extends Engine
             $params['body'][] = [
                 'delete' => [
                     '_id' => $model->getKey(),
-                    '_index' => $this->index,
-                    '_type' => $model->searchableAs(),
+                    '_index' => $model->searchableAs(),
                 ]
             ];
         });
@@ -132,7 +129,7 @@ class ElasticsearchEngine extends Engine
     protected function performSearch(Builder $builder, array $options = [])
     {
         $params = [
-            'index' => $this->index,
+            'index' => $builder->model->searchableAs(),
             'type' => $builder->index ?: $builder->model->searchableAs(),
             'body' => [
                 'query' => [
@@ -180,6 +177,7 @@ class ElasticsearchEngine extends Engine
      */
     protected function filters(Builder $builder)
     {
+        $builder->index = $builder->model->searchableAs();
         return collect($builder->wheres)->map(function ($value, $key) {
             if (is_array($value)) {
                 return ['terms' => [$key => $value]];
@@ -210,6 +208,7 @@ class ElasticsearchEngine extends Engine
      */
     public function map(Builder $builder, $results, $model)
     {
+        $builder->index = $builder->model->searchableAs();
         if ($results['hits']['total'] === 0) {
             return $model->newCollection();
         }
@@ -255,6 +254,7 @@ class ElasticsearchEngine extends Engine
      */
     protected function sort($builder)
     {
+        $builder->index = $builder->model->searchableAs();
         if (count($builder->orders) == 0) {
             return null;
         }

@@ -10,11 +10,11 @@ use Illuminate\Database\Eloquent\Collection;
 class ElasticsearchEngine extends Engine
 {
     /**
-     * Index where the models will be saved.
+     * Index prefix where the models will be saved.
      *
      * @var string
      */
-    protected $index;
+    protected $prefix;
 
     /**
      * Elastic where the instance of Elastic|\Elasticsearch\Client is stored.
@@ -29,9 +29,10 @@ class ElasticsearchEngine extends Engine
      * @param  \Elasticsearch\Client  $elastic
      * @return void
      */
-    public function __construct(Elastic $elastic)
+    public function __construct(Elastic $elastic, $prefix)
     {
         $this->elastic = $elastic;
+		$this->prefix  = $prefix;
     }
 
     /**
@@ -49,7 +50,7 @@ class ElasticsearchEngine extends Engine
             $params['body'][] = [
                 'update' => [
                     '_id' => $model->getKey(),
-                    '_index' => $model->searchableAs(),
+                    '_index' => $this->prefix . $model->searchableAs(),
                 ]
             ];
             $params['body'][] = [
@@ -76,7 +77,7 @@ class ElasticsearchEngine extends Engine
             $params['body'][] = [
                 'delete' => [
                     '_id' => $model->getKey(),
-                    '_index' => $model->searchableAs(),
+                    '_index' => $this->prefix . $model->searchableAs(),
                 ]
             ];
         });
@@ -92,6 +93,7 @@ class ElasticsearchEngine extends Engine
      */
     public function search(Builder $builder)
     {
+        $builder->index = $this->prefix . $builder->model->searchableAs();
         return $this->performSearch($builder, array_filter([
             'numericFilters' => $this->filters($builder),
             'size' => $builder->limit,
@@ -108,6 +110,7 @@ class ElasticsearchEngine extends Engine
      */
     public function paginate(Builder $builder, $perPage, $page)
     {
+        $builder->index = $this->prefix . $builder->model->searchableAs();
         $result = $this->performSearch($builder, [
             'numericFilters' => $this->filters($builder),
             'from' => (($page * $perPage) - $perPage),
@@ -128,9 +131,9 @@ class ElasticsearchEngine extends Engine
      */
     protected function performSearch(Builder $builder, array $options = [])
     {
+        $builder->index = $this->prefix . $builder->model->searchableAs();
         $params = [
-            'index' => $builder->model->searchableAs(),
-            'type' => $builder->index ?: $builder->model->searchableAs(),
+            'index' => $this->prefix . $builder->model->searchableAs(),
             'body' => [
                 'query' => [
                     'bool' => [
@@ -177,7 +180,7 @@ class ElasticsearchEngine extends Engine
      */
     protected function filters(Builder $builder)
     {
-        $builder->index = $builder->model->searchableAs();
+        $builder->index = $this->prefix . $builder->model->searchableAs();
         return collect($builder->wheres)->map(function ($value, $key) {
             if (is_array($value)) {
                 return ['terms' => [$key => $value]];
@@ -208,7 +211,7 @@ class ElasticsearchEngine extends Engine
      */
     public function map(Builder $builder, $results, $model)
     {
-        $builder->index = $builder->model->searchableAs();
+        $builder->index = $this->prefix . $builder->model->searchableAs();
         if ($results['hits']['total'] === 0) {
             return $model->newCollection();
         }
@@ -254,7 +257,7 @@ class ElasticsearchEngine extends Engine
      */
     protected function sort($builder)
     {
-        $builder->index = $builder->model->searchableAs();
+        $builder->index = $this->prefix . $builder->model->searchableAs();
         if (count($builder->orders) == 0) {
             return null;
         }
